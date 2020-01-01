@@ -14,19 +14,14 @@ uint8 g_fore_color = WHITE, g_back_color = BLACK;
 
 /*
 this is same as we did in our assembly code for vga_print_char
-
 vga_print_char:
   mov di, word[VGA_INDEX]
   mov al, byte[VGA_CHAR]
-
   mov ah, byte[VGA_BACK_COLOR]
   sal ah, 4
   or ah, byte[VGA_FORE_COLOR]
-
   mov [es:di], ax
-
   ret
-
 */
 uint16 vga_entry(unsigned char ch, uint8 fore_color, uint8 back_color) 
 {
@@ -68,7 +63,12 @@ void init_vga(uint8 fore_color, uint8 back_color)
   g_fore_color = fore_color;
   g_back_color = back_color;
 }
-
+void init_vga_fore(uint8 fore_color)
+{
+  vga_buffer = (uint16*)VGA_ADDRESS;
+  g_fore_color = fore_color;
+  
+}
 uint8 inb(uint16 port)
 {
   uint8 data;
@@ -94,17 +94,6 @@ void move_cursor_next_line()
   cursor_pos = 80 * cursor_next_line_index;
   cursor_next_line_index++;
   move_cursor(cursor_pos);
-}
-
-void gotoxy(uint16 x, uint16 y)
-{
-  vga_index = 80*y;
-  vga_index += x;
-  if(y > 0){
-    cursor_pos = 80 * cursor_next_line_index * y;
-    cursor_next_line_index++;
-    move_cursor(cursor_pos);
-  }
 }
 
 char get_input_keycode()
@@ -176,14 +165,19 @@ void print_int(int num)
   print_string(str_num);
 }
 
+
+
 int read_int()
 {
   char ch = 0;
   char keycode = 0;
   char data[32];
   int index = 0;
-  do{
+  do{       
+    
     keycode = get_input_keycode();
+        sleep(CALC_SLEEP);
+        sleep(CALC_SLEEP);
     if(keycode == KEY_ENTER){
       data[index] = '\0';
       print_new_line();
@@ -200,6 +194,7 @@ int read_int()
   return atoi(data);
 }
 
+
 char getchar()
 {
   char keycode = 0;
@@ -209,98 +204,280 @@ char getchar()
   return get_ascii_char(keycode);
 }
 
-void display_menu()
-{
-  gotoxy(25, 0);
-  print_string("! 80x86 Operating System !");
-  print_string("\n\n[ x86 Calculator Program ]");
-  print_string("\n\n!--- Menu ---!");
-  print_string("\n1] Addition");
-  print_string("\n2] Substraction");
-  print_string("\n3] Multiplication");
-  print_string("\n4] Division");
-  print_string("\n5] Modulus");
-  print_string("\n6] Logical AND");
-  print_string("\n7] Logical OR");
-  print_string("\n8] Exit");
+
+void read_numbers(int *day, int *month,int *year)
+{ 
+  
+  print_string("Enter a day : ");
+  sleep(CALC_SLEEP);
+  *day = read_int();
+  sleep(CALC_SLEEP);
+  print_string("Enter a month : ");
+  sleep(CALC_SLEEP);
+  *month = read_int();
+  sleep(CALC_SLEEP);
+  print_string("Enter a year : ");
+  sleep(CALC_SLEEP);
+  *year = read_int();
 }
 
-void read_two_numbers(int* num1, int *num2)
-{
-  print_string("Enter first number : ");
-  sleep(CALC_SLEEP);
-  *num1 = read_int();
-  print_string("Enter second number : ");
-  sleep(CALC_SLEEP);
-  *num2 = read_int();
+void array_sum(){
+
+ clear_screen();
+init_vga_fore(WHITE);
+print_string("\n^^...Enter the size of array ...^^ \n");
+sleep(CALC_SLEEP);
+init_vga_fore(YELLOW);
+int size=read_int();
+sleep(CALC_SLEEP);
+
+int a[size];
+int sum=0;
+int max=0;
+sleep(CALC_SLEEP);
+for(int i=0;i<size;i++)
+ { 
+    init_vga_fore(WHITE);
+   print_string("\nEnter the elements : ");
+   init_vga_fore(YELLOW);
+   a[i]=read_int();
+   sleep(CALC_SLEEP);
+   sum=sum+a[i];
+   if(a[i]>max)
+      max=a[i];
+ }
+ sleep(CALC_SLEEP);
+ init_vga_fore(YELLOW);
+print_string("\n\nThe Sum of Elements Of Arrays : ");
+print_int(sum);
+print_string("\n\nThe maximum Element in Arrays : ");
+print_int(max);
+
 }
 
-void calculator()
-{
-  int choice, num1, num2;
-  while(1){
-    display_menu();
-    print_string("\n\nEnter your choice : ");
-    choice = read_int();
-    switch(choice){
-      case 1:
-        read_two_numbers(&num1, &num2);
-        print_string("Addition : ");
-        print_int(num1 + num2);
-        break;
-      case 2:
-        read_two_numbers(&num1, &num2);
-        print_string("Substraction : ");
-        print_int(num1 - num2);
-        break;
-      case 3:
-        read_two_numbers(&num1, &num2);
-        print_string("Multiplication : ");
-        print_int(num1 * num2);
-        break;
-      case 4:
-        read_two_numbers(&num1, &num2);
-        if(num2 == 0){
-          print_string("Error: Divide by 0");
-        }else{
-          print_string("Division : ");
-          print_int(num1 / num2);
-        }
-        break;
-      case 5:
-        read_two_numbers(&num1, &num2);
-        print_string("Modulus : ");
-        print_int(num1 % num2);
-        break;
-      case 6:
-        read_two_numbers(&num1, &num2);
-        print_string("LogicalAND : ");
-        print_int(num1 & num2);
-        break;
-      case 7:
-        read_two_numbers(&num1, &num2);
-        print_string("Logical OR : ");
-        print_int(num1 | num2);
-        break;
-      case 8:
-        print_string("\nExiting from Calculator...");
-        sleep(CALC_SLEEP*3);
-        clear_screen();
-        print_string("Exited...");
-        return;
-      default:
-        print_string("\nInvalid choice...!");
-        break;
-    }
-    print_string("\n\nPress any key to reload screen...");
-    getchar();
-    clear_screen();
+
+void calcualte_age(){
+ clear_screen();
+ int day,month,year,dayl,monthl,yearl,agey,agem,aged;
+	//agey :your age of year
+	//agem :your age of month
+	//aged :your age of days
+	
+
+	  
+       init_vga_fore(BRIGHT_MAGENTA);
+	   print_string("             .....Welcome Dear User..... ");
+
+       init_vga_fore(WHITE);
+       print_string("\n\nOK... Now will calculate your ");
+       print_string("age and your age stage.......\n");
+
+           
+       print_string("\n\n^^Please Enter the data of the current day ,");             
+       print_string("then the month ,\nthen the year^^\n\n");       sleep(CALC_SLEEP);
+
+       init_vga_fore(YELLOW);
+
+       read_numbers(&day,&month,&year);     
+
+       init_vga_fore(WHITE);
+
+       print_string("\n\n^^Please Enter the data of birth day ");
+       print_string(",then the month ,\nthen the year^^\n\n");
+
+       sleep(CALC_SLEEP);
+       init_vga_fore(YELLOW);
+       read_numbers(&dayl,&monthl,&yearl);     
+
+    	     if (day<dayl)
+    	     {
+	    	   day= day + 30 ;
+		       month = month - 1 ;
+    	     }
+ 
+	         if (month < monthl)
+    	    {
+		       month = month + 12 ;
+               year = year - 1 ;
+	         }
+
+	         aged = day - dayl ;
+	         agem = month - monthl ;
+	         agey = year - yearl ;
+			
+	
+            init_vga_fore( WHITE);
+
+		    print_string("\n\n^^...Your Age :");
+            print_int(agey);
+            print_string(" year ");
+            print_int(agem);
+            print_string(" month ");
+            print_int(aged);
+            print_string(" day .");
+            
+       
+		
+		
+		   if(agey>=0&&agey<=17)
+		        print_string("\n^^..YOU ARE NOW IN CHILDHOOD..^^");
+		   else if(agey>=18&&agey<=30)
+		        print_string("\n^^..YOU ARE NOW IN ADOLESCENCE..^^");
+		   else if(agey>=31&&agey<=60)
+		        print_string("\n^^..YOU ARE NOW IN YOUNG STAGE..^^");
+		   else 
+	        	print_string("\n^^..YOU ARE NOW IN THE OLD AGE STAGE..^^");  
+
+   
+
+    
+ 
+
+}
+
+void power()
+{ 
+   clear_screen();
+  init_vga_fore(WHITE);
+  print_string("\n^^... Enter The Base ...^^^ ");
+  sleep(CALC_SLEEP);
+  init_vga_fore(YELLOW);
+  int base=read_int();
+ 
+  init_vga_fore(WHITE);
+  print_string("\n^^... Enter The power ...^^ ");
+  sleep(CALC_SLEEP);
+  init_vga_fore(YELLOW);
+  int power=read_int();
+  
+  int result=1;
+  
+  while(power!=0){
+    
+   result=result*base;
+   power--;
   }
+  init_vga_fore(YELLOW);
+  print_string("\n\n^^...The Result : ");
+  print_int(result);
+  print_string("  ...^^\n");
 }
+
+
+void total_diameters(){
+ clear_screen();
+init_vga_fore(WHITE);
+		int j , i ,sum ,sum1 ,n=3,x,y;
+	        int a[n][n] /*={{2,1,4},
+	                        {4,7,5},
+				{6,2,1}}*/;
+///enter the element matrix///
+
+	        sleep(CALC_SLEEP);
+	        for(i=0;i<n;i++){
+                   for(j=0;j<n;j++)
+		   {	
+		   print_string("Enter the element a");
+                   y=i+1;
+                   print_int(y);
+                   x=j+1;
+                   print_int(x);
+                   print_string(" : ");
+                   sleep(CALC_SLEEP);
+		         a[i][j]=read_int;	
+	           }
+	         }
+
+/// print matrix////
+
+	print_string("\nThe matrix is :");
+        print_new_line();
+        sleep(CALC_SLEEP);
+        for(i=0;i<n;i++)
+        {
+           for(j=0;j<n;j++){	
+              print_string(" ");
+	      print_int(a[i][j]);
+              sleep(CALC_SLEEP);	
+	    }
+	  print_new_line();
+         }
+	
+///The Total main diameter///
+     sleep(CALC_SLEEP);
+     for(i=0;i<n;i++){
+	for(j=0;j<n;j++)
+	{	
+	    if(i==j)
+	    sum=sum+a[i][j];
+        }
+     }
+
+        print_string("The Total main diameter =");
+        sleep(CALC_SLEEP);
+        print_int(sum);
+	print_new_line();
+
+///The Total secondray diameter///
+
+	for(i=0;i<n;i++){
+	  for(j=0;j<n;j++){	
+	    if(i+j==n-1)
+		sum1=sum1+a[i][j];
+          }
+	}	
+	
+	print_string("The Total secondray diameter =");
+        sleep(CALC_SLEEP);
+        print_int(sum1);
+	print_new_line();
+}
+
+
+
 
 void kernel_entry()
 {
   init_vga(WHITE, BLACK);
-  calculator();
+
+while(1){
+init_vga_fore(YELLOW);
+print_string("     ^^... MENU APP ...^^\n\n");
+init_vga_fore(YELLOW);
+print_string("1-^..Calculat Age Aplication..^\n\n");
+print_string("2-^..Find Max Element In Array And Sum Of Their Elements..^\n\n");
+print_string("3-^..Power && base App..^\n\n");
+print_string("4-^..Total main & secondray diameter array..^\n\n");
+print_string("5-^..EXIT..^\n\n");
+init_vga_fore(WHITE);
+print_string("\n^..Enter choice..^\n");
+sleep(CALC_SLEEP);
+int num=read_int();
+
+switch(num)
+{
+
+  case 1:calcualte_age();break;
+
+  case 2:array_sum();break;
+
+  case 3:power();break;
+
+  case 4:total_diameters();break;
+ 
+  case 5:print_string("EXIT...");break;
+
+  default:print_string("...Wrong input...");
+
+}
+    
+
+    init_vga_fore(BRIGHT_MAGENTA);
+    print_string("\n\nPress any key to reload screen...");
+    getchar();
+    clear_screen();
+}
+
+
 }
 
